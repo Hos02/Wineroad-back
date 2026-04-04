@@ -13,53 +13,99 @@ import ordersRoutes from "./routes/orders.routes";
 import toursRoutes from "./routes/tours.routes";
 import { adminLoginRules } from "./validators/adminValidators";
 
-function getCorsOrigin(): boolean | string[] {
+/**
+ * Parse CORS origins from env
+ */
+function getCorsOrigins(): string[] | null {
   const raw = process.env.CORS_ORIGINS?.trim();
-  if (!raw) {
-    return true;
-  }
-  const list = raw
+  if (!raw) return null;
+
+  return raw
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  return list.length ? list : true;
 }
 
 export function createApp() {
   const app = express();
 
+  const allowedOrigins = getCorsOrigins();
+  const corsAllowAll =
+    process.env.CORS_ALLOW_ALL === "true" || process.env.CORS_ALLOW_ALL === "1";
+
+  if (corsAllowAll) {
+    console.warn(
+      "[CORS] CORS_ALLOW_ALL is enabled — all browser origins are allowed. Turn this off for production."
+    );
+  }
+
   app.use(
-    cors({
-      origin: getCorsOrigin(),
-      credentials: true,
-    })
+    corsAllowAll
+      ? cors({ origin: true, credentials: true })
+      : cors({
+          origin: (origin, callback) => {
+            console.log("🔥 Incoming origin:", origin);
+
+            if (!origin) return callback(null, true);
+
+            if (!allowedOrigins) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+              return callback(null, true);
+            }
+
+            console.error("❌ Blocked by CORS:", origin);
+            return callback(new Error("Not allowed by CORS"));
+          },
+          credentials: true,
+        })
   );
+
   app.use(express.json());
-  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+
+  app.use(
+    "/uploads",
+    express.static(path.resolve(process.cwd(), "uploads"))
+  );
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
 
-  // All /admin/* routes on the main app — avoid `app.use("/admin", router)` with Express 5 (it can swallow POST /admin/login).
+  // Admin routes
   app.get("/admin/ping", (_req, res) => {
     res.json({ ok: true, service: "wineroad-api" });
   });
+
   app.post(
     "/admin/login",
     adminLoginRules,
     handleValidationErrors,
     asyncHandler(adminController.adminLogin)
   );
-  app.get("/admin/orders", requireAdmin, asyncHandler(adminController.listOrdersAdmin));
-  app.get("/admin/stats", requireAdmin, asyncHandler(adminController.adminStats));
+
+  app.get(
+    "/admin/orders",
+    requireAdmin,
+    asyncHandler(adminController.listOrdersAdmin)
+  );
+
+  app.get(
+    "/admin/stats",
+    requireAdmin,
+    asyncHandler(adminController.adminStats)
+  );
+
   app.post(
     "/admin/upload-image",
     requireAdmin,
     uploadTourImage.single("image"),
-    asyncHandler(async (req, res) => uploadController.uploadTourImage(req, res))
+    asyncHandler(async (req, res) =>
+      uploadController.uploadTourImage(req, res)
+    )
   );
 
+  // Public routes
   app.use("/tours", toursRoutes);
   app.use("/orders", ordersRoutes);
   app.use("/gallery", galleryRoutes);
