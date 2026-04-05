@@ -1,24 +1,49 @@
 import mongoose from "mongoose";
 
+const localeBlockSchema = new mongoose.Schema(
+  {
+    title: { type: String, default: "", maxlength: 255 },
+    description: { type: String, default: "" },
+    duration: { type: String, default: "", maxlength: 128 },
+  },
+  { _id: false }
+);
+
 const tourSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, maxlength: 255 },
-    description: { type: String, required: true },
+    locales: {
+      en: { type: localeBlockSchema, default: () => ({}) },
+      ru: { type: localeBlockSchema, default: () => ({}) },
+      am: { type: localeBlockSchema, default: () => ({}) },
+    },
+    /** @deprecated Legacy single-locale fields; use `locales` only for new tours. */
+    name: { type: String },
+    description: { type: String },
+    duration: { type: String },
     pricePerPerson: { type: Number, required: true },
     date: { type: String, required: true },
-    duration: { type: String, required: true, maxlength: 128 },
     mainImage: { type: String, required: true },
     galleryImages: { type: [String], default: [] },
   },
   { timestamps: true }
 );
 
-export type TourAttrs = {
-  name: string;
+export type TourLocaleBlock = {
+  title: string;
   description: string;
+  duration: string;
+};
+
+export type TourLocales = {
+  en: TourLocaleBlock;
+  ru: TourLocaleBlock;
+  am: TourLocaleBlock;
+};
+
+export type TourAttrs = {
+  locales: TourLocales;
   pricePerPerson: number;
   date: string;
-  duration: string;
   mainImage: string;
   galleryImages: string[];
 };

@@ -8,18 +8,35 @@ const tourImageUrlOptions = {
   protocols: ["http", "https"],
 };
 
+const localeKeys = ["en", "ru", "am"] as const;
+
+function localeCreateRules(prefix: (typeof localeKeys)[number]) {
+  return [
+    body(`locales.${prefix}.title`)
+      .trim()
+      .notEmpty()
+      .withMessage(`${prefix}.title is required`)
+      .isLength({ max: 255 })
+      .withMessage(`${prefix}.title is too long`),
+    body(`locales.${prefix}.description`)
+      .trim()
+      .notEmpty()
+      .withMessage(`${prefix}.description is required`),
+    body(`locales.${prefix}.duration`)
+      .trim()
+      .notEmpty()
+      .withMessage(`${prefix}.duration is required`)
+      .isLength({ max: 128 })
+      .withMessage(`${prefix}.duration is too long`),
+  ];
+}
+
 export const tourIdParam = [
   param("id").isMongoId().withMessage("id must be a valid MongoDB ObjectId"),
 ];
 
 export const createTourRules = [
-  body("name")
-    .trim()
-    .notEmpty()
-    .withMessage("name is required")
-    .isLength({ max: 255 })
-    .withMessage("name is too long"),
-  body("description").trim().notEmpty().withMessage("description is required"),
+  ...localeKeys.flatMap((k) => localeCreateRules(k)),
   body("pricePerPerson")
     .isFloat({ gt: 0 })
     .withMessage("pricePerPerson must be a number greater than 0"),
@@ -27,12 +44,6 @@ export const createTourRules = [
     .trim()
     .matches(isoDateRegex)
     .withMessage("date must be YYYY-MM-DD"),
-  body("duration")
-    .trim()
-    .notEmpty()
-    .withMessage("duration is required")
-    .isLength({ max: 128 })
-    .withMessage("duration is too long"),
   body("mainImage")
     .trim()
     .notEmpty()
@@ -52,13 +63,27 @@ export const createTourRules = [
 
 export const updateTourRules = [
   ...tourIdParam,
-  body("name")
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("name cannot be empty")
-    .isLength({ max: 255 }),
-  body("description").optional().trim().notEmpty().withMessage("description cannot be empty"),
+  ...localeKeys.flatMap((prefix) => [
+    body(`locales.${prefix}.title`)
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage(`${prefix}.title cannot be empty`)
+      .isLength({ max: 255 })
+      .withMessage(`${prefix}.title is too long`),
+    body(`locales.${prefix}.description`)
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage(`${prefix}.description cannot be empty`),
+    body(`locales.${prefix}.duration`)
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage(`${prefix}.duration cannot be empty`)
+      .isLength({ max: 128 })
+      .withMessage(`${prefix}.duration is too long`),
+  ]),
   body("pricePerPerson")
     .optional()
     .isFloat({ gt: 0 })
@@ -68,12 +93,6 @@ export const updateTourRules = [
     .trim()
     .matches(isoDateRegex)
     .withMessage("date must be YYYY-MM-DD"),
-  body("duration")
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("duration cannot be empty")
-    .isLength({ max: 128 }),
   body("mainImage")
     .optional()
     .trim()
