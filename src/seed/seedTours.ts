@@ -23,7 +23,8 @@ const SAMPLE_TOURS = [
       },
     },
     pricePerPerson: 189,
-    date: "2025-06-14",
+    date: "2026-06-14",
+    bookableDates: ["2026-06-14", "2026-06-21"],
     mainImage:
       "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1200&q=80",
     galleryImages: [
@@ -53,7 +54,8 @@ const SAMPLE_TOURS = [
       },
     },
     pricePerPerson: 225,
-    date: "2025-07-05",
+    date: "2026-07-05",
+    bookableDates: ["2026-07-05"],
     mainImage:
       "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&q=80",
     galleryImages: [
@@ -82,7 +84,8 @@ const SAMPLE_TOURS = [
       },
     },
     pricePerPerson: 165,
-    date: "2025-08-02",
+    date: "2026-08-02",
+    bookableDates: ["2026-08-02"],
     mainImage:
       "https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=1200&q=80",
     galleryImages: [],
@@ -109,7 +112,8 @@ const SAMPLE_TOURS = [
       },
     },
     pricePerPerson: 142,
-    date: "2025-09-20",
+    date: "2026-09-20",
+    bookableDates: ["2026-09-20"],
     mainImage:
       "https://images.unsplash.com/photo-1560493676-04071c5f467b?w=1200&q=80",
     galleryImages: [],

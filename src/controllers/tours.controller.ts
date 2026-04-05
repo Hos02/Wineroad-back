@@ -6,6 +6,21 @@ import { OrderModel } from "../models/Order";
 import { ApiError } from "../utils/ApiError";
 import { formatTour } from "../utils/mongoSerialize";
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Dedupe, sort YYYY-MM-DD; prefers array from body, else single `date` string. */
+function normalizeBookableDatesInput(
+  bookableRaw: unknown,
+  fallbackDate: string | undefined
+): string[] {
+  const fromArr = Array.isArray(bookableRaw)
+    ? bookableRaw.map((x) => String(x).trim()).filter((s) => ISO_DATE.test(s))
+    : [];
+  const fb = String(fallbackDate ?? "").trim();
+  const merged = fromArr.length ? fromArr : ISO_DATE.test(fb) ? [fb] : [];
+  return [...new Set(merged)].sort();
+}
+
 function mergeBlock(
   base: TourLocaleBlock | undefined,
   patch: Partial<TourLocaleBlock> | undefined
@@ -44,17 +59,23 @@ export async function getTourById(req: Request, res: Response) {
 }
 
 export async function createTour(req: Request, res: Response) {
-  const { locales, pricePerPerson, date, mainImage, galleryImages } = req.body as {
+  const { locales, pricePerPerson, date, bookableDates, mainImage, galleryImages } = req.body as {
     locales: TourLocales;
     pricePerPerson: number;
-    date: string;
+    date?: string;
+    bookableDates?: unknown;
     mainImage: string;
     galleryImages?: string[];
   };
+  const normalized = normalizeBookableDatesInput(bookableDates, date);
+  if (normalized.length === 0) {
+    throw new ApiError(400, "At least one bookable date is required");
+  }
   const created = await TourModel.create({
     locales,
     pricePerPerson,
-    date,
+    date: normalized[0],
+    bookableDates: normalized,
     mainImage,
     galleryImages: galleryImages ?? [],
   });
@@ -74,11 +95,27 @@ export async function updateTour(req: Request, res: Response) {
     locales: Partial<TourLocales>;
     pricePerPerson: number;
     date: string;
+    bookableDates: unknown;
     mainImage: string;
     galleryImages: string[];
   }>;
 
   let patch: Record<string, unknown> = { ...body };
+  if (body.bookableDates !== undefined || body.date !== undefined) {
+    const existing = await TourModel.findById(id).lean();
+    if (!existing) {
+      throw new ApiError(404, "Tour not found");
+    }
+    const normalized = normalizeBookableDatesInput(
+      body.bookableDates !== undefined ? body.bookableDates : existing.bookableDates,
+      body.date !== undefined ? body.date : existing.date
+    );
+    if (normalized.length === 0) {
+      throw new ApiError(400, "At least one bookable date is required");
+    }
+    patch.date = normalized[0];
+    patch.bookableDates = normalized;
+  }
   if (body.locales) {
     const existing = await TourModel.findById(id).lean();
     if (!existing) {

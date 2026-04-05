@@ -18,6 +18,7 @@ type LeanTour = {
   duration?: string;
   pricePerPerson: number;
   date: string;
+  bookableDates?: string[];
   mainImage: string;
   galleryImages?: string[];
   createdAt?: Date;
@@ -62,13 +63,26 @@ function normalizeLocales(doc: LeanTour): {
   };
 }
 
+function normalizeBookableDatesForApi(doc: LeanTour): string[] {
+  const fromDb = (doc.bookableDates ?? [])
+    .map((s) => String(s).trim())
+    .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s));
+  if (fromDb.length) return [...new Set(fromDb)].sort();
+  const legacy = String(doc.date ?? "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(legacy)) return [legacy];
+  return [];
+}
+
 export function formatTour(doc: LeanTour) {
   const locales = normalizeLocales(doc);
+  const bookableDates = normalizeBookableDatesForApi(doc);
+  const date = bookableDates[0] ?? doc.date ?? "";
   return {
     id: doc._id.toString(),
     locales,
     pricePerPerson: doc.pricePerPerson,
-    date: doc.date,
+    date,
+    bookableDates,
     mainImage: doc.mainImage,
     galleryImages: doc.galleryImages ?? [],
     imageUrl: doc.mainImage,

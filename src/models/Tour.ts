@@ -21,7 +21,10 @@ const tourSchema = new mongoose.Schema(
     description: { type: String },
     duration: { type: String },
     pricePerPerson: { type: Number, required: true },
+    /** Earliest bookable day (kept in sync with `bookableDates` for older clients). */
     date: { type: String, required: true },
+    /** Admin-defined calendar days when this tour can be booked (YYYY-MM-DD). */
+    bookableDates: { type: [String], default: [] },
     mainImage: { type: String, required: true },
     galleryImages: { type: [String], default: [] },
   },
@@ -44,6 +47,7 @@ export type TourAttrs = {
   locales: TourLocales;
   pricePerPerson: number;
   date: string;
+  bookableDates: string[];
   mainImage: string;
   galleryImages: string[];
 };
