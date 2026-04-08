@@ -44,6 +44,10 @@ export const createTourRules = [
     .trim()
     .matches(isoDateRegex)
     .withMessage("date must be YYYY-MM-DD"),
+  body("isHidden")
+    .optional()
+    .isBoolean()
+    .withMessage("isHidden must be a boolean"),
   body("mainImage")
     .trim()
     .notEmpty()
@@ -93,6 +97,10 @@ export const updateTourRules = [
     .trim()
     .matches(isoDateRegex)
     .withMessage("date must be YYYY-MM-DD"),
+  body("isHidden")
+    .optional()
+    .isBoolean()
+    .withMessage("isHidden must be a boolean"),
   body("mainImage")
     .optional()
     .trim()

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as toursController from "../controllers/tours.controller";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { optionalAdmin } from "../middleware/optionalAdmin";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { handleValidationErrors } from "../middleware/validate";
 import {
@@ -11,9 +12,10 @@ import {
 
 const router = Router();
 
-router.get("/", asyncHandler(toursController.listTours));
+router.get("/", optionalAdmin, asyncHandler(toursController.listTours));
 router.get(
   "/:id",
+  optionalAdmin,
   tourIdParam,
   handleValidationErrors,
   asyncHandler(toursController.getTourById)

@@ -25,6 +25,8 @@ const tourSchema = new mongoose.Schema(
     date: { type: String, required: true },
     /** Admin-defined calendar days when this tour can be booked (YYYY-MM-DD). */
     bookableDates: { type: [String], default: [] },
+    /** Hidden tours are excluded from public website listings/details. */
+    isHidden: { type: Boolean, default: false },
     mainImage: { type: String, required: true },
     galleryImages: { type: [String], default: [] },
   },
@@ -48,6 +50,7 @@ export type TourAttrs = {
   pricePerPerson: number;
   date: string;
   bookableDates: string[];
+  isHidden: boolean;
   mainImage: string;
   galleryImages: string[];
 };

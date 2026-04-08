@@ -19,6 +19,7 @@ type LeanTour = {
   pricePerPerson: number;
   date: string;
   bookableDates?: string[];
+  isHidden?: boolean;
   mainImage: string;
   galleryImages?: string[];
   createdAt?: Date;
@@ -83,6 +84,7 @@ export function formatTour(doc: LeanTour) {
     pricePerPerson: doc.pricePerPerson,
     date,
     bookableDates,
+    isHidden: Boolean(doc.isHidden),
     mainImage: doc.mainImage,
     galleryImages: doc.galleryImages ?? [],
     imageUrl: doc.mainImage,
@@ -98,7 +100,9 @@ type LeanOrder = {
   userEmail: string;
   numberOfPeople: number;
   totalPrice: number;
+  status?: "pending" | "confirmed" | "cancelled";
   createdAt?: Date;
+  updatedAt?: Date;
 };
 
 function isPopulatedTour(t: LeanTour | Types.ObjectId): t is LeanTour {
@@ -117,7 +121,9 @@ export function formatOrder(doc: LeanOrder) {
     userEmail: doc.userEmail,
     numberOfPeople: doc.numberOfPeople,
     totalPrice: doc.totalPrice,
+    status: doc.status ?? "confirmed",
     createdAt: doc.createdAt?.toISOString() ?? new Date(0).toISOString(),
+    updatedAt: doc.updatedAt?.toISOString() ?? new Date(0).toISOString(),
     ...(tour ? { tour } : {}),
   };
 }

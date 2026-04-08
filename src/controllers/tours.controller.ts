@@ -41,8 +41,10 @@ function mergeLocales(
   };
 }
 
-export async function listTours(_req: Request, res: Response) {
-  const docs = await TourModel.find().sort({ createdAt: 1 }).lean();
+export async function listTours(req: Request, res: Response) {
+  const includeHidden = req.admin?.role === "admin" && req.query.includeHidden === "1";
+  const query = includeHidden ? {} : { isHidden: { $ne: true } };
+  const docs = await TourModel.find(query).sort({ createdAt: 1 }).lean();
   res.json(docs.map((d) => formatTour(d)));
 }
 
@@ -55,15 +57,20 @@ export async function getTourById(req: Request, res: Response) {
   if (!tour) {
     throw new ApiError(404, "Tour not found");
   }
+  const includeHidden = req.admin?.role === "admin" && req.query.includeHidden === "1";
+  if (tour.isHidden && !includeHidden) {
+    throw new ApiError(404, "Tour not found");
+  }
   res.json(formatTour(tour));
 }
 
 export async function createTour(req: Request, res: Response) {
-  const { locales, pricePerPerson, date, bookableDates, mainImage, galleryImages } = req.body as {
+  const { locales, pricePerPerson, date, bookableDates, isHidden, mainImage, galleryImages } = req.body as {
     locales: TourLocales;
     pricePerPerson: number;
     date?: string;
     bookableDates?: unknown;
+    isHidden?: boolean;
     mainImage: string;
     galleryImages?: string[];
   };
@@ -76,6 +83,7 @@ export async function createTour(req: Request, res: Response) {
     pricePerPerson,
     date: normalized[0],
     bookableDates: normalized,
+    isHidden: Boolean(isHidden),
     mainImage,
     galleryImages: galleryImages ?? [],
   });
@@ -96,6 +104,7 @@ export async function updateTour(req: Request, res: Response) {
     pricePerPerson: number;
     date: string;
     bookableDates: unknown;
+    isHidden: boolean;
     mainImage: string;
     galleryImages: string[];
   }>;
@@ -142,11 +151,14 @@ export async function deleteTour(req: Request, res: Response) {
   if (!mongoose.isValidObjectId(id)) {
     throw new ApiError(400, "Invalid tour id");
   }
-  const blockingOrders = await OrderModel.countDocuments({ tour: id });
+  const blockingOrders = await OrderModel.countDocuments({
+    tour: id,
+    status: { $ne: "cancelled" },
+  });
   if (blockingOrders > 0) {
     throw new ApiError(
       409,
-      "Cannot delete tour with existing orders. Remove or reassign orders first."
+      "Cannot delete tour with active orders. Cancel related orders first."
     );
   }
   const result = await TourModel.findByIdAndDelete(id);

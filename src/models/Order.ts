@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+export const ORDER_STATUSES = ["pending", "confirmed", "cancelled"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
 const orderSchema = new mongoose.Schema(
   {
     tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", required: true },
@@ -7,6 +10,12 @@ const orderSchema = new mongoose.Schema(
     userEmail: { type: String, required: true, maxlength: 255 },
     numberOfPeople: { type: Number, required: true, min: 1 },
     totalPrice: { type: Number, required: true },
+    status: {
+      type: String,
+      enum: ORDER_STATUSES,
+      default: "confirmed",
+      required: true,
+    },
   },
   { timestamps: true }
 );
@@ -17,6 +26,7 @@ export type OrderAttrs = {
   userEmail: string;
   numberOfPeople: number;
   totalPrice: number;
+  status: OrderStatus;
 };
 
 export const OrderModel = mongoose.model<OrderAttrs>("Order", orderSchema);

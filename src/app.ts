@@ -12,6 +12,7 @@ import galleryRoutes from "./routes/gallery.routes";
 import ordersRoutes from "./routes/orders.routes";
 import toursRoutes from "./routes/tours.routes";
 import { adminLoginRules } from "./validators/adminValidators";
+import { updateOrderStatusRules } from "./validators/orderValidators";
 
 /**
  * Parse CORS origins from env
@@ -88,6 +89,14 @@ export function createApp() {
     "/admin/orders",
     requireAdmin,
     asyncHandler(adminController.listOrdersAdmin)
+  );
+
+  app.patch(
+    "/admin/orders/:id/status",
+    requireAdmin,
+    updateOrderStatusRules,
+    handleValidationErrors,
+    asyncHandler(adminController.updateOrderStatusAdmin)
   );
 
   app.get(

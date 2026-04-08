@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import { OrderModel } from "../models/Order";
 import { TourModel } from "../models/Tour";
 import { ApiError } from "../utils/ApiError";
@@ -55,8 +56,30 @@ export async function adminStats(_req: Request, res: Response) {
   const tourCount = await TourModel.countDocuments();
   const orderCount = await OrderModel.countDocuments();
   const agg = await OrderModel.aggregate<{ total: number }>([
+    { $match: { status: "confirmed" } },
     { $group: { _id: null, total: { $sum: "$totalPrice" } } },
   ]);
   const revenueTotal = agg[0]?.total ?? 0;
   res.json({ tourCount, orderCount, revenueTotal });
+}
+
+export async function updateOrderStatusAdmin(req: Request, res: Response) {
+  const id = req.params.id;
+  const { status } = req.body as { status: "pending" | "confirmed" | "cancelled" };
+  if (!mongoose.isValidObjectId(id)) {
+    throw new ApiError(400, "Invalid order id");
+  }
+
+  const updated = await OrderModel.findByIdAndUpdate(
+    id,
+    { status },
+    { returnDocument: "after", runValidators: true }
+  )
+    .populate("tour")
+    .lean();
+
+  if (!updated) {
+    throw new ApiError(404, "Order not found");
+  }
+  res.json(formatOrder(updated));
 }
