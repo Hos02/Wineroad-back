@@ -95,7 +95,7 @@ export function formatTour(doc: LeanTour) {
 
 type LeanOrder = {
   _id: Types.ObjectId;
-  tour: LeanTour | Types.ObjectId;
+  tour: LeanTour | Types.ObjectId | null;
   userName: string;
   userEmail: string;
   numberOfPeople: number;
@@ -105,14 +105,24 @@ type LeanOrder = {
   updatedAt?: Date;
 };
 
-function isPopulatedTour(t: LeanTour | Types.ObjectId): t is LeanTour {
-  return typeof t === "object" && t !== null && "_id" in t && ("locales" in t || "name" in t);
+function isPopulatedTour(t: LeanTour | Types.ObjectId | null): t is LeanTour {
+  return (
+    typeof t === "object" &&
+    t !== null &&
+    "_id" in t &&
+    ("locales" in t || "name" in t)
+  );
 }
 
 export function formatOrder(doc: LeanOrder) {
   const tourRaw = doc.tour;
-  const tourId = isPopulatedTour(tourRaw) ? tourRaw._id.toString() : tourRaw.toString();
-  const tour = isPopulatedTour(tourRaw) ? formatTour(tourRaw) : undefined;
+  const tourId =
+    tourRaw == null
+      ? ""
+      : isPopulatedTour(tourRaw)
+        ? tourRaw._id.toString()
+        : tourRaw.toString();
+  const tour = tourRaw != null && isPopulatedTour(tourRaw) ? formatTour(tourRaw) : undefined;
 
   return {
     id: doc._id.toString(),
